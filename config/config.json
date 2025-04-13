@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "tema",
+    "password": "your_password",
+    "database": "ndTry",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "tema",
+    "password": "your_password",
+    "database": "ndTry_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "tema",
+    "password": "your_password",
+    "database": "ndTry_prod",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+}
