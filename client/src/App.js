@@ -1,42 +1,53 @@
 import React, { useContext, useEffect, useState } from "react";
-import { BrowserRouter } from "react-router-dom";
 import AppRouter from "./components/AppRouter";
 import NavBar from "./components/NavBar";
+import NavBar2 from "./components/NavBar2";
+import Footer from "./components/Footer";
 import { observer } from "mobx-react-lite";
-import { Context } from "./index";
+import { Context } from "./Context";
 import { check } from "./http/userAPI";
-import { Spinner } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import RedirectHandler from "./components/RedirectHandler";
+import "./styles/slider.css";
 
 const App = observer(() => {
   const { user } = useContext(Context);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Проверка токена и восстановление состояния пользователя
-    check()
-      .then((data) => {
-        user.setUser(data); // Устанавливаем данные пользователя
-        user.setIsAuth(true); // Помечаем пользователя как авторизованного
-      })
-      .catch(() => {
-        user.setIsAuth(false); // Если ошибка, сбрасываем авторизацию
-      })
-      .finally(() => {
-        setLoading(false); // Когда завершится проверка, отключаем загрузку
-      });
-  }, [user]); // Добавляем user в зависимости, чтобы корректно обновить состояние
+    const initAuth = async () => {
+      try {
+        console.log("Запрос на авторизацию...");
+        const data = await check();
+        console.log("Данные после авторизации:", data);
+        if (data) {
+          user.setUser(data);
+          user.setIsAuth(true);
+        }
+      } catch (error) {
+        console.error("Ошибка при проверке авторизации:", error);
+        user.logout();
+      } finally {
+        console.log("Завершена инициализация авторизации.");
+        setLoading(false);
+      }
+    };
 
-  // Если идет процесс загрузки (проверка токена), показываем спиннер
+    initAuth();
+  }, [user]);
+
   if (loading) {
-    return <Spinner animation={"grow"} />;
+    return <div>Загрузка...</div>; // Заглушка для загрузки
   }
 
   return (
-    <BrowserRouter>
+    <>
       <NavBar />
+      <NavBar2 />
+      <RedirectHandler />
       <AppRouter />
-    </BrowserRouter>
+      <Footer />
+    </>
   );
 });
 

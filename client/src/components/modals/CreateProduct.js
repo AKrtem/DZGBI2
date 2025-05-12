@@ -1,155 +1,264 @@
 import React, { useContext, useEffect, useState } from "react";
 import Modal from "react-bootstrap/Modal";
 import { Button, Dropdown, Form, Row, Col } from "react-bootstrap";
-import { Context } from "../../index";
+import { Context } from "../../Context";
 import {
   createProduct,
   fetchGroups,
-  fetchProducts,
   fetchTypes,
+  fetchViews,
 } from "../../http/productAPI";
 import { observer } from "mobx-react-lite";
 
-const CreateProduct = observer(({ show, onHide }) => {
+const CreateProduct = observer(({ show, onHide, onCreateSuccess }) => {
   const { product } = useContext(Context);
+
   const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
-  const [file, setFile] = useState(null);
-  const [info, setInfo] = useState([]);
+  const [allGroups, setAllGroups] = useState([]);
+  const [allTypes, setAllTypes] = useState([]);
+
+  // Параметры продукта (все необязательные)
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [height, setHeight] = useState("");
+  const [load, setLoad] = useState("");
+  const [weight, setWeight] = useState("");
+  const [frostResistance, setFrostResistance] = useState("");
+  const [innerDiameter, setInnerDiameter] = useState("");
+  const [outerDiameter, setOuterDiameter] = useState("");
 
   useEffect(() => {
-    fetchTypes().then((data) => product.setTypes(data));
-    fetchGroups().then((data) => product.setGroups(data));
-    fetchProducts().then((data) => product.setProducts(data));
-  });
+    const fetchData = async () => {
+      const viewsData = await fetchViews();
+      const groupsData = await fetchGroups();
+      const typesData = await fetchTypes();
 
-  const addInfo = () => {
-    setInfo([...info, { title: "", description: "", number: Date.now() }]);
-  };
-  const removeInfo = (number) => {
-    setInfo(info.filter((i) => i.number !== number));
-  };
-  const changeInfo = (key, value, number) => {
-    setInfo(
-      info.map((i) => (i.number === number ? { ...i, [key]: value } : i))
-    );
+      product.setViews(viewsData);
+      setAllGroups(groupsData);
+      setAllTypes(typesData);
+    };
+
+    fetchData();
+  }, []);
+
+  const filteredGroups = product.selectedView
+    ? allGroups.filter((g) => g.viewId === product.selectedView.id)
+    : [];
+
+  const filteredTypes = product.selectedGroup
+    ? allTypes.filter((type) => type.groupId === product.selectedGroup.id)
+    : [];
+
+  const resetForm = () => {
+    setName("");
+    setLength("");
+    setWidth("");
+    setHeight("");
+    setLoad("");
+    setWeight("");
+    setFrostResistance("");
+    setInnerDiameter("");
+    setOuterDiameter("");
+    product.setSelectedView(null);
+    product.setSelectedGroup(null);
+    product.setSelectedType(null);
   };
 
-  const selectFile = (e) => {
-    setFile(e.target.files[0]);
+  const handleClose = () => {
+    resetForm();
+    onHide();
   };
 
   const addProduct = () => {
-    if (!product.selectedGroup || !product.selectedType) {
-      alert("Выберите группу и тип перед добавлением продукта");
+    if (
+      !product.selectedView ||
+      !product.selectedGroup ||
+      !product.selectedType ||
+      !name
+    ) {
+      alert("Заполните обязательные поля: имя, вид, группа, тип");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("price", `${price}`);
-    formData.append("img", file);
-    formData.append("groupId", product.selectedGroup.id);
-    formData.append("typeId", product.selectedType.id);
-    formData.append("info", JSON.stringify(info));
+    const info = [
+      { title: "Длина", description: length },
+      { title: "Ширина", description: width },
+      { title: "Высота", description: height },
+      { title: "Нагрузка", description: load },
+      { title: "Масса", description: weight },
+      { title: "Морозостойкость", description: frostResistance },
+      { title: "Внутренний диаметр", description: innerDiameter },
+      { title: "Внешний диаметр", description: outerDiameter },
+    ].filter((i) => i.description); // Убираем пустые
 
-    createProduct(formData).then(() => onHide());
+    const payload = {
+      name,
+      viewId: product.selectedView.id,
+      groupId: product.selectedGroup.id,
+      typeId: product.selectedType.id,
+      length: length || null,
+      width: width || null,
+      height: height || null,
+      load: load || null,
+      weight: weight || null,
+      frostResistance: frostResistance || null,
+      innerDiameter: innerDiameter || null,
+      outerDiameter: outerDiameter || null,
+      info, // <-- передаём массив параметров
+    };
+
+    createProduct(payload)
+      .then(() => {
+        if (onCreateSuccess) onCreateSuccess();
+        handleClose();
+      })
+      .catch((err) => {
+        console.error("Ошибка при создании продукта", err);
+        alert("Ошибка при создании продукта");
+      });
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={handleClose} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title id="contained-modal-title-vcenter">
-          Добавить продукт
-        </Modal.Title>
+        <Modal.Title>Добавить продукт</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form>
-          <Dropdown className="mt-2 mb-2">
+          <Dropdown className="mb-2">
             <Dropdown.Toggle>
-              {product.selectedType.name || "Выберите тип"}
+              {product.selectedView?.name || "Выберите вид"}
             </Dropdown.Toggle>
             <Dropdown.Menu>
-              {product.types.map((type) => (
+              {product.views.map((view) => (
                 <Dropdown.Item
-                  onClick={() => product.setSelectedType(type)}
-                  key={type.id}
+                  key={view.id}
+                  onClick={() => {
+                    product.setSelectedView(view);
+                    product.setSelectedGroup(null);
+                    product.setSelectedType(null);
+                  }}
                 >
-                  {type.name}
+                  {view.name}
                 </Dropdown.Item>
               ))}
             </Dropdown.Menu>
           </Dropdown>
-          <Dropdown className="mt-2 mb-2">
+
+          <Dropdown className="mb-2">
             <Dropdown.Toggle>
               {product.selectedGroup?.name || "Выберите группу"}
             </Dropdown.Toggle>
             <Dropdown.Menu>
-              {product.groups.map((group) => (
+              {filteredGroups.map((group) => (
                 <Dropdown.Item
-                  onClick={() => product.setSelectedGroup(group)}
                   key={group.id}
+                  onClick={() => {
+                    product.setSelectedGroup(group);
+                    product.setSelectedType(null);
+                  }}
                 >
                   {group.name}
                 </Dropdown.Item>
               ))}
             </Dropdown.Menu>
           </Dropdown>
+
+          <Dropdown className="mb-3">
+            <Dropdown.Toggle>
+              {product.selectedType?.name || "Выберите тип"}
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              {filteredTypes.map((type) => (
+                <Dropdown.Item
+                  key={type.id}
+                  onClick={() => product.setSelectedType(type)}
+                >
+                  {type.name}
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+
           <Form.Control
+            className="mb-3"
+            placeholder="Введите название продукта"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-3"
-            placeholder="Введите название продукта"
           />
-          <Form.Control
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            className="mt-3"
-            placeholder="Введите стоимость продукта"
-            type="number"
-          />
-          <Form.Control className="mt-3" type="file" onChange={selectFile} />
-          <hr />
-          <Button variant={"outline-dark"} onClick={addInfo}>
-            Добавить новый продукт
-          </Button>
-          {info.map((i) => (
-            <Row className="mt-4" key={i.number}>
-              <Col md={4}>
-                <Form.Control
-                  value={i.title}
-                  onChange={(e) =>
-                    changeInfo("title", e.target.value, i.number)
-                  }
-                  placeholder="Введите название свойства"
-                />
-              </Col>
-              <Col md={4}>
-                <Form.Control
-                  value={i.description}
-                  onChange={(e) =>
-                    changeInfo("description", e.target.value, i.number)
-                  }
-                  placeholder="Введите описание свойства"
-                />
-              </Col>
-              <Col md={4}>
-                <Button
-                  onClick={() => removeInfo(i.number)}
-                  variant={"outline-danger"}
-                >
-                  Удалить
-                </Button>
-              </Col>
-            </Row>
-          ))}
+
+          <Row>
+            <Col md={6}>
+              <Form.Control
+                className="mb-2"
+                placeholder="Длина (мм)"
+                value={length}
+                onChange={(e) => setLength(e.target.value)}
+                type="number"
+              />
+              <Form.Control
+                className="mb-2"
+                placeholder="Ширина (мм)"
+                value={width}
+                onChange={(e) => setWidth(e.target.value)}
+                type="number"
+              />
+              <Form.Control
+                className="mb-2"
+                placeholder="Высота (мм)"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                type="number"
+              />
+              <Form.Control
+                className="mb-2"
+                placeholder="Нагрузка (кг)"
+                value={load}
+                onChange={(e) => setLoad(e.target.value)}
+                type="number"
+              />
+            </Col>
+            <Col md={6}>
+              <Form.Control
+                className="mb-2"
+                placeholder="Масса (кг)"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                type="number"
+              />
+              <Form.Control
+                className="mb-2"
+                placeholder="Морозостойкость"
+                value={frostResistance}
+                onChange={(e) => setFrostResistance(e.target.value)}
+              />
+              <Form.Control
+                className="mb-2"
+                placeholder="Внутренний диаметр (мм)"
+                value={innerDiameter}
+                onChange={(e) => setInnerDiameter(e.target.value)}
+                type="number"
+              />
+              <Form.Control
+                className="mb-2"
+                placeholder="Внешний диаметр (мм)"
+                value={outerDiameter}
+                onChange={(e) => setOuterDiameter(e.target.value)}
+                type="number"
+              />
+            </Col>
+          </Row>
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="outline-danger" onClick={onHide}>
+        <Button variant="outline-danger" onClick={handleClose}>
           Закрыть
         </Button>
-        <Button variant="outline-success" onClick={addProduct}>
+        <Button
+          variant="outline-success"
+          onClick={addProduct}
+          disabled={!name || !product.selectedType}
+        >
           Добавить
         </Button>
       </Modal.Footer>

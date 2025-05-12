@@ -2,16 +2,16 @@ import React from "react";
 import { Card, Col } from "react-bootstrap";
 import Image from "react-bootstrap/Image";
 import star from "../assets/star.png";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // заменили useHistory на useNavigate
 import { PRODUCT_ROUTE } from "../utils/consts";
 
 const ProductItem = ({ product }) => {
-  const history = useHistory();
+  const navigate = useNavigate(); // используем useNavigate
   return (
     <Col
       md={3}
       className={"mt-3"}
-      onClick={() => history.push(PRODUCT_ROUTE + "/" + product.id)}
+      onClick={() => navigate(PRODUCT_ROUTE + "/" + product.id)} // используем navigate
     >
       <Card style={{ width: 150, cursor: "pointer" }} border={"light"}>
         <Image

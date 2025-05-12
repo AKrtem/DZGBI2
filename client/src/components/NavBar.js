@@ -1,54 +1,74 @@
 import React, { useContext } from "react";
-import { Context } from "../index";
+import { Context } from "../Context";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
-import { NavLink } from "react-router-dom";
-import { ADMIN_ROUTE, LOGIN_ROUTE, SHOP_ROUTE } from "../utils/consts";
-import { Button } from "react-bootstrap";
+import { NavLink, useNavigate } from "react-router-dom";
+import {
+  ADMIN_ROUTE,
+  LOGIN_ROUTE,
+  SHOP_ROUTE,
+  CART_ROUTE,
+  DELIVERY_ROUTE,
+} from "../utils/consts";
+import { Button, Container } from "react-bootstrap";
 import { observer } from "mobx-react-lite";
-import Container from "react-bootstrap/Container";
-import { useHistory } from "react-router-dom";
+
 const NavBar = observer(() => {
   const { user } = useContext(Context);
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const logOut = () => {
     user.setUser({});
     user.setIsAuth(false);
+    navigate(LOGIN_ROUTE);
   };
 
   return (
     <Navbar bg="dark" variant="dark">
       <Container>
-        <NavLink style={{ color: "white" }} to={SHOP_ROUTE}>
-          КупиДевайс
+        <NavLink
+          style={{ color: "white", textDecoration: "none" }}
+          to={SHOP_ROUTE}
+        >
+          ООО ДЗЖБИ
         </NavLink>
-        {user.isAuth ? (
-          <Nav className="ml-auto" style={{ color: "white" }}>
+
+        <Nav className="ml-auto" style={{ color: "white", gap: "0.5rem" }}>
+          {user.isAuth ? (
+            <>
+              {user.role === "ADMIN" && (
+                <Button
+                  variant="outline-light"
+                  onClick={() => navigate(ADMIN_ROUTE)}
+                >
+                  Админ панель
+                </Button>
+              )}
+              <Button
+                variant="outline-light"
+                onClick={() => navigate(DELIVERY_ROUTE)}
+              >
+                Доставка
+              </Button>
+              <Button
+                variant="outline-light"
+                onClick={() => navigate(CART_ROUTE)}
+              >
+                Корзина
+              </Button>
+              <Button variant="outline-light" onClick={logOut}>
+                Выйти
+              </Button>
+            </>
+          ) : (
             <Button
-              variant={"outline-light"}
-              onClick={() => history.push(ADMIN_ROUTE)}
-            >
-              Админ панель
-            </Button>
-            <Button
-              variant={"outline-light"}
-              onClick={() => logOut()}
-              className="ml-2"
-            >
-              Выйти
-            </Button>
-          </Nav>
-        ) : (
-          <Nav className="ml-auto" style={{ color: "white" }}>
-            <Button
-              variant={"outline-light"}
-              onClick={() => history.push(LOGIN_ROUTE)}
+              variant="outline-light"
+              onClick={() => navigate(LOGIN_ROUTE)}
             >
               Авторизация
             </Button>
-          </Nav>
-        )}
+          )}
+        </Nav>
       </Container>
     </Navbar>
   );

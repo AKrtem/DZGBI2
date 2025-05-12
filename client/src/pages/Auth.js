@@ -3,33 +3,34 @@ import { Container, Form } from "react-bootstrap";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import Row from "react-bootstrap/Row";
-import { NavLink, useLocation, useHistory } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { LOGIN_ROUTE, REGISTRATION_ROUTE, SHOP_ROUTE } from "../utils/consts";
 import { login, registration } from "../http/userAPI";
 import { observer } from "mobx-react-lite";
-import { Context } from "../index";
+import { Context } from '../Context';
+import { useNavigate } from "react-router-dom"; // добавили useNavigate
 
 const Auth = observer(() => {
   const { user } = useContext(Context);
   const location = useLocation();
-  const history = useHistory();
+  const navigate = useNavigate(); // используем useNavigate
   const isLogin = location.pathname === LOGIN_ROUTE;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const click = async () => {
     try {
-      let data;
-      if (isLogin) {
-        data = await login(email, password);
-      } else {
-        data = await registration(email, password);
-      }
-      user.setUser(data); // <-- сюда передаёшь данные из ответа!
+      console.log("Trying to login with:", email, password);
+      const data = isLogin
+        ? await login(email.trim(), password.trim())
+        : await registration(email.trim(), password.trim());
+
+      user.setUser(data);
       user.setIsAuth(true);
-      history.push(SHOP_ROUTE);
+      navigate(SHOP_ROUTE);
     } catch (e) {
-      alert(e.response.data.message);
+      console.error("Auth error:", e); 
+      alert(e.response?.data?.message || e.message || "Произошла ошибка");
     }
   };
 

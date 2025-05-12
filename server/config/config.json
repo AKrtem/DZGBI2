@@ -1,23 +1,23 @@
 {
   "development": {
     "username": "tema",
-    "password": "your_password",
+    "password": "pc2613run",
     "database": "ndTry",
-    "host": "127.0.0.1",
+    "host": "localhost",
     "dialect": "postgres"
   },
   "test": {
     "username": "tema",
-    "password": "your_password",
-    "database": "ndTry_test",
-    "host": "127.0.0.1",
+    "password": "pc2613run",
+    "database": "ndTry",
+    "host": "localhost",
     "dialect": "postgres"
   },
   "production": {
     "username": "tema",
-    "password": "your_password",
-    "database": "ndTry_prod",
-    "host": "127.0.0.1",
+    "password": "pc2613run",
+    "database": "ndTry",
+    "host": "localhost",
     "dialect": "postgres"
   }
 }
