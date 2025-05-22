@@ -1,19 +1,35 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, autorun } from "mobx";
 
 export default class ProductStore {
+  _views = [];
+  _types = [];
+  _groups = [];
+  _products = [];
+  _cart = [];
+  _selectedView = {};
+  _selectedType = {};
+  _selectedGroup = {};
+  _page = 1;
+  _totalCount = 0;
+  _limit = 3;
+
   constructor() {
-    this._views = [];
-    this._types = [];
-    this._groups = [];
-    this._products = [];
-    this._cart = [];
-    this._selectedView = {};
-    this._selectedType = {};
-    this._selectedGroup = {};
-    this._page = 1;
-    this._totalCount = 0;
-    this._limit = 3;
     makeAutoObservable(this);
+
+    // Загрузка корзины из localStorage
+    try {
+      const storedCart = JSON.parse(localStorage.getItem("cart"));
+      if (Array.isArray(storedCart)) {
+        this._cart = storedCart;
+      }
+    } catch (e) {
+      console.warn("Не удалось загрузить корзину из localStorage", e);
+    }
+
+    // Автоматическое сохранение корзины при изменениях
+    autorun(() => {
+      localStorage.setItem("cart", JSON.stringify(this._cart));
+    });
   }
 
   setViews(views) {
@@ -55,6 +71,11 @@ export default class ProductStore {
     this._totalCount = count;
   }
 
+  // Добавлен сеттер для полной замены корзины (если понадобится)
+  setCart(cart) {
+    this._cart = cart;
+  }
+
   // Корзина
   addToCart(product) {
     const existingProduct = this._cart.find((item) => item.id === product.id);
@@ -67,7 +88,9 @@ export default class ProductStore {
 
   updateQuantity(id, quantity) {
     const item = this._cart.find((p) => p.id === id);
-    if (item) item.quantity = quantity;
+    if (item) {
+      item.quantity = quantity;
+    }
   }
 
   removeFromCart(productId) {
@@ -93,6 +116,7 @@ export default class ProductStore {
     return this._cart.some((item) => item.id === productId);
   }
 
+  // Геттеры
   get cart() {
     return this._cart;
   }

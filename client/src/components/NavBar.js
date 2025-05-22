@@ -20,6 +20,7 @@ const NavBar = observer(() => {
   const logOut = () => {
     user.setUser({});
     user.setIsAuth(false);
+    localStorage.removeItem("token"); // или имя ключа, где у тебя хранится токен
     navigate(LOGIN_ROUTE);
   };
 
@@ -34,6 +35,11 @@ const NavBar = observer(() => {
         </NavLink>
 
         <Nav className="ml-auto" style={{ color: "white", gap: "0.5rem" }}>
+          {/* Кнопка Корзина всегда видна */}
+          <Button variant="outline-light" onClick={() => navigate(CART_ROUTE)}>
+            Корзина
+          </Button>
+
           {user.isAuth ? (
             <>
               {user.role === "ADMIN" && (
@@ -49,12 +55,6 @@ const NavBar = observer(() => {
                 onClick={() => navigate(DELIVERY_ROUTE)}
               >
                 Доставка
-              </Button>
-              <Button
-                variant="outline-light"
-                onClick={() => navigate(CART_ROUTE)}
-              >
-                Корзина
               </Button>
               <Button variant="outline-light" onClick={logOut}>
                 Выйти
